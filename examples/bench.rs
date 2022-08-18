@@ -21,7 +21,7 @@ use rayon::slice::ParallelSliceMut;
 use tabled::{object::Columns, Alignment, Modify, Style, Table, Tabled};
 
 const ALGOS: &[Algo] = &[Algo::PdqSort, Algo::CrumSort];
-const SIZES: &[usize] = &[4, 8];
+const SIZES: &[usize] = &[1, 4, 8, 16];
 const LENS: &[usize] = &[1 << 12, 1 << 16, 1 << 20, 1 << 24];
 
 #[derive(Clone, Copy, Debug, Tabled)]
