@@ -37,6 +37,9 @@ const CRUM_CHUNK_SIZE: usize = 32;
 const CRUM_OUT: usize = 24;
 const JOIN_THRESHOLD: usize = 1_024;
 
+#[allow(clippy::assertions_on_constants)]
+const _: () = assert!(2 * CRUM_CHUNK_SIZE <= SWAP_SIZE);
+
 pub(crate) trait Sortable: Copy + Default + Ord {}
 
 impl<T: Copy + Default + Ord> Sortable for T {}
@@ -104,21 +107,34 @@ impl Partitioner {
         swap: Option<&mut [T]>,
         pivot: T,
     ) {
-        let val = unsafe {
+        let val = {
             let i = if IS_LEFT { self.left_i } else { self.right_i };
-            // `Partitioner::next` is called `slice.len()` times ==> 0 <= i < `slice.len()`
-            let val = swap.map_or_else(|| *slice.get_unchecked(i), |swap| *swap.get_unchecked(i));
+            let val = swap.map_or_else(|| {
+                // SAFETY:
+                // `Partitioner::next` is called `slice.len()` times ==> 0 <= i < `slice.len()`
+                unsafe { *slice.get_unchecked(i) }
+            }, |swap| {
+                // SAFETY:
+                // `Partitioner::next` is called `slice.len()` times ==> 0 <= i < `slice.len()` (1)
+                // i < 2 * CRUM_CHUNK_SIZE (2)
+                // 2 * CRUM_CHUNK_SIZE <= `swap.len()` (3)
+                // (1), (2), (3) ==> 0 <= i < `swap.len()`
+                unsafe { *swap.get_unchecked(i) }
+            });
 
+            // SAFETY:
             // `usize::from(val <= pivot)` <= 1, `Partitioner::next` is called `slice.len()`
             // times ==> self.cursor <= i` (1)
             // (1), i < `slice.len()` ==> self.cursor < `slice.len()`
-            *slice.get_unchecked_mut(self.cursor) = val;
+            unsafe { *slice.get_unchecked_mut(self.cursor) = val; }
+
+            // SAFETY:
             // for nth iteration:
             //   `usize::from(val <= pivot)` <= 1 ==> self.cursor <= n (1)
             //   self.end_i = `slice.len()` - 1 - n (2)
             //   (1), (2) ==> self.cursor + self.end_i <= `slice.len()` - 1 <==>
             //   <==> self.cursor + self.end_i < `slice.len()`
-            *slice.get_unchecked_mut(self.cursor + self.end_i) = val;
+            unsafe { *slice.get_unchecked_mut(self.cursor + self.end_i) = val; }
 
             val
         };
@@ -142,17 +158,21 @@ fn fulcrum_partition_inner<T: Sortable>(slice: &mut [T], swap: &mut [T], pivot: 
         let mut cursor = 0;
 
         let mut partition = |slice: &mut [T]| {
-            let val = unsafe {
+            let val = {
+                // SAFETY:
                 // `partition` is called `slice.len()` times ==> i < `slice.len()`
-                let val = *slice.get_unchecked(i);
+                let val = unsafe { *slice.get_unchecked(i) };
 
+                // SAFETY:
                 // `swap.len` >= `slice.len()` ==> i < `swap.len()` (1)
                 // `usize::from(val <= pivot)` <= 1, `partition` is called `slice.len()` times ==>
                 // => cursor <= i (2)
                 // (1), (2) ==> 0 <= i - cursor < `swap.len()`
-                *swap.get_unchecked_mut(i - cursor) = val;
+                unsafe { *swap.get_unchecked_mut(i - cursor) = val; }
+
+                // SAFETY:
                 // cursor <= i, i < `slice.len()` ==> cursor < `slice.len()`
-                *slice.get_unchecked_mut(cursor) = val;
+                unsafe { *slice.get_unchecked_mut(cursor) = val; }
 
                 val
             };
