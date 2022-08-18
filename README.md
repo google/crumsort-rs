@@ -6,15 +6,23 @@ The goal of this port is to excel at sorting well-distributed data which is why 
 
 ## Temporary caveats
 
-* sorts uniform data faster than crumsort, but severly skewed distributions slower
+There are a few limitations given some of the constraints when this was originally written:
+
+* sorts uniform data faster than crumsort, but severly skewed distributions slower (missing `crumsort_analyze` function)
 * intended as a solution for sorting large (`u64` or `u128`) integers
 * only sorts `Copy + Default` data as a way to limit the use of `unsafe`
 * missing un-parallelized version (data needs to implement `Send`)
 * missing `*_by` and `*_by_key` sorting alternatives (data needs to implement `Ord`)
 
+Please feel free to submit improvements in any of these area by submitting a pull request.
+
 ## Benchmarks against parallel pdqsort (Rayon)
 
-All banchmarks run with the `bench` example on an M1 Pro.
+All banchmarks run with the `bench` example on an M1 Pro:
+
+```bash
+cargo run --release --example bench
+```
 
 ### Uniformly distributed random `u32`s
 
@@ -41,3 +49,7 @@ All banchmarks run with the `bench` example on an M1 Pro.
 | 2<sup>20</sup> | crumsort  | 364.79Mkeys/s |      66.85% |
 | 2<sup>24</sup> |  pdqsort  | 226.83Mkeys/s |       0.00% |
 | 2<sup>24</sup> | crumsort  | 385.42Mkeys/s |      69.92% |
+
+## Note
+
+This is not an officially supported Google product.
