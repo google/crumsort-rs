@@ -15,18 +15,18 @@
 #![deny(missing_docs)]
 
 //! # crumsort
-//! 
+//!
 //! A parallelized Rust port of [crumsort](https://github.com/scandum/crumsort).
-//! 
+//!
 //! # Usage
-//! 
+//!
 //! ```
 //! use crumsort::ParCrumSort;
 //!
 //! let mut vals = [5, 4, 1, 3, 2];
 //!
 //! vals.par_crumsort();
-//! 
+//!
 //! assert_eq!(vals, [1, 2, 3, 4, 5]);
 //! ```
 
@@ -109,24 +109,29 @@ impl Partitioner {
     ) {
         let val = {
             let i = if IS_LEFT { self.left_i } else { self.right_i };
-            let val = swap.map_or_else(|| {
-                // SAFETY:
-                // `Partitioner::next` is called `slice.len()` times ==> 0 <= i < `slice.len()`
-                unsafe { *slice.get_unchecked(i) }
-            }, |swap| {
-                // SAFETY:
-                // `Partitioner::next` is called `slice.len()` times ==> 0 <= i < `slice.len()` (1)
-                // i < 2 * CRUM_CHUNK_SIZE (2)
-                // 2 * CRUM_CHUNK_SIZE <= `swap.len()` (3)
-                // (1), (2), (3) ==> 0 <= i < `swap.len()`
-                unsafe { *swap.get_unchecked(i) }
-            });
+            let val = swap.map_or_else(
+                || {
+                    // SAFETY:
+                    // `Partitioner::next` is called `slice.len()` times ==> 0 <= i < `slice.len()`
+                    unsafe { *slice.get_unchecked(i) }
+                },
+                |swap| {
+                    // SAFETY:
+                    // `Partitioner::next` is called `slice.len()` times ==> 0 <= i < `slice.len()` (1)
+                    // i < 2 * CRUM_CHUNK_SIZE (2)
+                    // 2 * CRUM_CHUNK_SIZE <= `swap.len()` (3)
+                    // (1), (2), (3) ==> 0 <= i < `swap.len()`
+                    unsafe { *swap.get_unchecked(i) }
+                },
+            );
 
             // SAFETY:
             // `usize::from(val <= pivot)` <= 1, `Partitioner::next` is called `slice.len()`
             // times ==> self.cursor <= i` (1)
             // (1), i < `slice.len()` ==> self.cursor < `slice.len()`
-            unsafe { *slice.get_unchecked_mut(self.cursor) = val; }
+            unsafe {
+                *slice.get_unchecked_mut(self.cursor) = val;
+            }
 
             // SAFETY:
             // for nth iteration:
@@ -134,7 +139,9 @@ impl Partitioner {
             //   self.end_i = `slice.len()` - 1 - n (2)
             //   (1), (2) ==> self.cursor + self.end_i <= `slice.len()` - 1 <==>
             //   <==> self.cursor + self.end_i < `slice.len()`
-            unsafe { *slice.get_unchecked_mut(self.cursor + self.end_i) = val; }
+            unsafe {
+                *slice.get_unchecked_mut(self.cursor + self.end_i) = val;
+            }
 
             val
         };
@@ -168,11 +175,15 @@ fn fulcrum_partition_inner<T: Sortable>(slice: &mut [T], swap: &mut [T], pivot: 
                 // `usize::from(val <= pivot)` <= 1, `partition` is called `slice.len()` times ==>
                 // => cursor <= i (2)
                 // (1), (2) ==> 0 <= i - cursor < `swap.len()`
-                unsafe { *swap.get_unchecked_mut(i - cursor) = val; }
+                unsafe {
+                    *swap.get_unchecked_mut(i - cursor) = val;
+                }
 
                 // SAFETY:
                 // cursor <= i, i < `slice.len()` ==> cursor < `slice.len()`
-                unsafe { *slice.get_unchecked_mut(cursor) = val; }
+                unsafe {
+                    *slice.get_unchecked_mut(cursor) = val;
+                }
 
                 val
             };
@@ -333,16 +344,16 @@ fn fulcrum_partition<T: Sortable + Send>(slice: &mut [T], swap: &mut [T], max: O
 /// Parallel sort extension trait.
 pub trait ParCrumSort {
     /// Unstably sorts the slice.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use crumsort::ParCrumSort;
     ///
     /// let mut vals = [5, 4, 1, 3, 2];
     ///
     /// vals.par_crumsort();
-    /// 
+    ///
     /// assert_eq!(vals, [1, 2, 3, 4, 5]);
     /// ```
     fn par_crumsort(&mut self);

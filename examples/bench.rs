@@ -14,7 +14,6 @@
 
 use std::{fmt, time::Instant};
 
-
 use crumsort::ParCrumSort;
 use rand::prelude::*;
 use rayon::slice::ParallelSliceMut;
