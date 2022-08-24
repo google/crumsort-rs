@@ -32,9 +32,14 @@
 
 mod quadsort;
 
+/// Size of tack-allocated swap memory for certain operations that can be performed faster with
+/// swap memory than in-place.
 const SWAP_SIZE: usize = 512;
+/// Size of likely unrolled loops when performing partitioning that does not fit in swap.
 const CRUM_CHUNK_SIZE: usize = 32;
+/// Partition ratio at which point quadsort is used.
 const CRUM_OUT: usize = 24;
+/// Minimum slice length to consider running partitioning in parallel.
 const JOIN_THRESHOLD: usize = 1_024;
 
 #[allow(clippy::assertions_on_constants)]
