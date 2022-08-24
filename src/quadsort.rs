@@ -324,6 +324,7 @@ impl ForwardMerger {
         self.dst_i += 1;
     }
 }
+
 fn forward_merge<T: Sortable>(dst: &mut [T], src: &[T]) {
     assert!(dst.len() >= 4);
     assert_eq!(dst.len(), src.len());
@@ -451,6 +452,7 @@ impl PartialForwardMerger {
         }
     }
 }
+
 fn partial_forward_merge<T: Sortable>(slice: &mut [T], mut swap: &mut [T], block_len: usize) {
     assert!(slice.len() > block_len);
 
